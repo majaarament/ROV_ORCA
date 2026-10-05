@@ -130,6 +130,9 @@ COOLDOWN = {"in_reach": 20, "in_reach_sturdy": 20, "near_bay": 20, "fish_fleeing
 HINTS = {"in_reach", "in_reach_sturdy", "near_bay", "fish_fleeing", "high_disturbance",
          "face_lost", "hand_lost", "all_done"}
 
+# what ORCA still says unprompted when config.ORCA_TALK is "less": mistakes, and things that stop the work
+IMPORTANT = {"damaged", "slipped", "dropped", "face_lost", "hand_lost", "calibrated"}
+
 # voice commands: (regex, command for the game)
 COMMANDS = [
     (r"\blights?\s+(off|out)\b|\b(turn|switch)\s+(off|out)\s+(the\s+)?lights?\b|\bgo dark\b", "lights_off"),
@@ -263,6 +266,10 @@ class Orca:
             return
         if key == "near_bay" and "drawer" in self._learned:
             return
+        if config.ORCA_TALK != "all" and key != "unknown":      # "unknown" answers something you said
+            first_look = key == "dwell" and sp not in self._learned      # the grip advice, until you've got it right
+            if config.ORCA_TALK != "less" or not (key in IMPORTANT or first_look):
+                return
         if key in HINTS and (self.speaking or now - self.orca_time < config.COMMENT_GAP):
             return
         cd = COOLDOWN.get(key, 0)

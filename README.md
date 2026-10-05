@@ -19,6 +19,9 @@ The ecologist "becomes" the robot:
 It comments when something matters (too much force, fish fleeing), answers
 questions about the scene, and stops repeating a grip hint once you've got that
 species right. Make a mistake and the hint comes back.
+`ORCA_TALK` in `config.py` sets how much it says without being asked: `"all"`, `"less"`
+(the default: mistakes, lost tracking, and each species' grip the first time you look at it)
+or `"asked"` (it only answers you).
 
 **Two points of view** (press **P**, or say "Orca, first person" / "Orca, outside view"):
 
@@ -110,6 +113,11 @@ Without taking the headset off: "Orca, centre view" makes wherever you face the 
 straight ahead. On the Mac: **ENTER** skips a calibration step that will not pass,
 **C** runs the calibration again, **X** recentres. The other keys work as usual.
 
+**Seeing double?** The two pictures have to sit behind the viewer's two lenses, and how far
+apart that is depends on the phone and the viewer. On the Mac, **]** slides the pictures
+together and **[** apart, while the wearer says when they merge into one. The number is
+shown in the console; put it in `config.py` as `VR_EYE_NUDGE` to keep it.
+
 **Debug view.** The link under the start button (or `https://<the Mac>:8443/?debug=1`) shows
 the camera feed with the hand joints drawn on it, one eye's picture and the live readings,
 for setting up without a viewer. It also works in a browser on the Mac itself
@@ -133,6 +141,7 @@ is part of the log file's name. It lives in one small class (`Mapping` in `vr/te
 
 **Tuning**, also in `config.py`: `VR_HEAD_GAIN` (1 = the sea turns exactly as far as your
 head), `VR_EYE_SEPARATION` (depth), `VR_LENS_K` (counter-bulge for the lenses),
+`VR_WORLD_H` and `VR_SEABED_BELOW` (how far you can look up and down),
 `VR_HAND_GAIN`, `VR_HAND_DEAD_ZONE`, `VR_HEAD_SIGNS` (if a phone reports a direction
 backwards), `VR_MIC` / `VR_AUDIO_OUT` (`"mac"` if the phone's sound is a problem).
 

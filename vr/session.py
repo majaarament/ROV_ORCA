@@ -38,6 +38,7 @@ class VRSession:
         # head -> view: so many world pixels per degree, around the usual starting view
         w, h = config.VR_EYE_SIZE
         self.eye = config.VR_EYE_SEPARATION // 2
+        self.nudge = config.VR_EYE_NUDGE
         self.ppd = w / config.VR_FOV_DEG * config.VR_HEAD_GAIN
         self.xmin, self.xmax = self.eye, config.WORLD_W - w - self.eye
         self.ymin, self.ymax = 0, config.WORLD_H - h
@@ -184,7 +185,7 @@ class VRSession:
         if not self.server.connected:
             return
         state = dict(t="state", phase=self.phase, yaw0=round(self.head.yaw0, 2), pitch0=round(self.head.pitch0, 2),
-                     hud=self.hud())
+                     nudge=self.nudge, hud=self.hud())
         text = json.dumps(state)
         if text != self._state or now - self._sent_state > 0.25:
             self._state, self._sent_state = text, now
@@ -216,13 +217,18 @@ class VRSession:
                 ("phone connected" if s.connected else "waiting for the phone: open the address above") +
                 (f" · {s.fps:.0f} fps q{int(s.quality)}" if s.connected else ""),
                 f"phase: {self.phase}{step} · pinch = {config.VR_PINCH_ACTION}",
-                "ENTER skip step · C calibrate again · X recentre"]
+                f"ENTER skip step · C calibrate again · X recentre · [ ] pictures {self.nudge:+.3f}"]
 
     def key(self, k):
         if k in (pygame.K_RETURN, pygame.K_KP_ENTER):
             self.calibration.skip()
         elif k == pygame.K_c:
             self.calibrate()
+        elif k in (pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET):      # the two pictures apart / together
+            step = 0.005 if k == pygame.K_RIGHTBRACKET else -0.005
+            self.nudge = round(max(-0.2, min(0.2, self.nudge + step)), 3)
+            logger.log("key", "vr_eye_nudge", f"{self.nudge:+.3f}")
+            return True
         elif k == pygame.K_k:
             pass                        # there is no mouse mode in VR
         else:

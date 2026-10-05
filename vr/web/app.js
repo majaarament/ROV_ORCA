@@ -37,7 +37,12 @@ const report = (what, error) => {
 
 function onMessage(m) {
   if (m.t === "config") { cfg = m; ready(true); }
-  else if (m.t === "state") { state = m; drawHud(m.hud); if (DEBUG) readout(m); }
+  else if (m.t === "state") {
+    state = m;
+    $("hud").style.setProperty("--shift", `${(m.nudge || 0) * 50}vw`);     // the HUD moves with the pictures
+    drawHud(m.hud);
+    if (DEBUG) readout(m);
+  }
 }
 
 function onBinary(buffer) {
@@ -126,12 +131,13 @@ void main() { v = vec2(a.x * 0.5 + 0.5, 0.5 - a.y * 0.5); gl_Position = vec4(a, 
 // On the way it bulges the picture to cancel the viewer's lenses, keeps the horizon level when the head
 // tilts, and slides the picture by however far the head has turned since the Mac drew it.
 const FRAGMENT = `precision highp float;
-uniform sampler2D tex; uniform vec2 res, shift, lens; uniform float roll, zoom, aspect, mono;
+uniform sampler2D tex; uniform vec2 res, shift, lens; uniform float roll, zoom, aspect, mono, nudge;
 varying vec2 v;
 void main() {
   float eye = mono > 0.5 ? 0.0 : step(0.5, v.x);
   float eyes = mono > 0.5 ? 1.0 : 2.0;
   vec2 p = vec2((v.x - 0.5 * eye) * eyes, v.y) - 0.5;
+  p.x += nudge * (2.0 * eye - 1.0);      // each picture slid towards the nose, so its middle sits behind its lens
   float shape = res.x / eyes / res.y;
   vec2 q = vec2(p.x * shape, p.y);
   float r2 = dot(q, q) * 4.0;
@@ -167,7 +173,7 @@ function setupGl() {
   gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
   for (const [k, val] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR],
     [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, val);
-  for (const name of ["res", "shift", "lens", "roll", "zoom", "aspect", "mono"]) uniforms[name] = gl.getUniformLocation(program, name);
+  for (const name of ["res", "shift", "lens", "roll", "zoom", "aspect", "mono", "nudge"]) uniforms[name] = gl.getUniformLocation(program, name);
 }
 
 // a new picture from the Mac. Unpacking takes a few ms: if another arrives meanwhile, only the newest is kept.
@@ -205,6 +211,7 @@ function draw(now) {
   gl.uniform1f(uniforms.zoom, DEBUG ? 1 : cfg.overscan);
   gl.uniform1f(uniforms.aspect, cfg.w / cfg.h);
   gl.uniform1f(uniforms.mono, DEBUG ? 1 : 0);
+  gl.uniform1f(uniforms.nudge, DEBUG ? 0 : state.nudge || 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 

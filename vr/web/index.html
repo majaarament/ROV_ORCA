@@ -37,8 +37,8 @@
   .eye { position: relative; flex: 1; overflow: hidden; }
   .eye .in { position: absolute; left: 50%; top: 50%; width: 58%; height: 62%;
              transform: translate(calc(-50% + var(--nudge)), -50%); text-align: center; }
-  .eye.left { --nudge: 1.1vw; }
-  .eye.right { --nudge: -1.1vw; }
+  .eye.left { --nudge: calc(1.1vw + var(--shift, 0vw)); }
+  .eye.right { --nudge: calc(-1.1vw - var(--shift, 0vw)); }
   .in > div { position: absolute; left: 0; right: 0; text-shadow: 0 0 0.6vh #000, 0 0 0.3vh #000; }
   .orca { top: 0; font-size: 3.2vh; color: var(--cyan); letter-spacing: 0.12em; }
   .dot { display: inline-block; width: 1.9vh; height: 1.9vh; border-radius: 50%; margin-left: 0.5em;

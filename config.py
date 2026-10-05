@@ -60,6 +60,10 @@ PIPER_PAUSE = 0.30                 # seconds of silence between sentences (longe
 PREFERRED_VOICES = ["Daniel", "Karen", "Samantha"]   # macOS voices, first found wins
 VOICE_RATE = 185
 COMMENT_GAP = 6                    # seconds of silence before ORCA volunteers another hint
+ORCA_TALK = "less"                 # what ORCA says without being asked:
+                                   #   "all"   everything: hints, praise, remarks about the fish
+                                   #   "less"  mistakes, lost tracking, and each species' grip the first time you look at it
+                                   #   "asked" nothing: it only answers you
 
 # ---------------- OpenAI (optional): ORCA's voice and wit ----------------
 # Put your key in a file called .env next to this one, as   openai=sk-...
@@ -110,6 +114,10 @@ VR_EYE_SIZE = (800, 720)           # pixels drawn for each eye
 VR_STREAM_FPS = 30                 # pictures sent per second; the phone re-aims the last one in between
 VR_JPEG_QUALITY = (38, 62)         # lowest and highest picture quality; drops when the Wi-Fi can't keep up
 VR_EYE_SEPARATION = 16             # pixels between the two eyes' viewpoints: more = deeper, less = easier on the eyes
+VR_EYE_NUDGE = 0.0                 # slides the two pictures together (+) or apart (-), as a share of one eye's width.
+                                   # Seeing double? Tune it live with [ and ] on the Mac, then put the number here
+VR_WORLD_H = 1800                  # the sea is taller in VR, so there is something to see when you look up or down
+VR_SEABED_BELOW = 560              # how much of that is seabed under the seabed line: more = you can look further down
 VR_OVERSCAN = 1.14                 # the phone shows the middle of each picture, so fast head turns have a margin
 VR_LENS_K = (0.10, 0.04)           # counter-bulge for the viewer's lenses; (0, 0) = none
 
@@ -148,8 +156,9 @@ VR_LOG_HZ = 10                     # head and hand samples written to the log pe
 
 def use_vr():
     """Switch every setting that differs in phone VR mode. Called once, before the game is built."""
-    global MODE, WIDTH, HEIGHT, START_POV, CONDITION
+    global MODE, WIDTH, HEIGHT, WORLD_H, SEABED_Y, START_POV, CONDITION
     MODE = "vr"
     WIDTH, HEIGHT = VR_EYE_SIZE
+    WORLD_H, SEABED_Y = VR_WORLD_H, VR_WORLD_H - VR_SEABED_BELOW
     START_POV = "first"                # you are the robot
     CONDITION = f"vr_{VR_PINCH_ACTION}_{CONDITION}"

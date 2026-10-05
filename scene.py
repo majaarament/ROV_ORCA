@@ -238,12 +238,17 @@ class Scene:
         top = STRIP_TOP - camy
         if top >= H:
             return
-        view = self.strip.subsurface((int(camx), 0, W, self.strip.get_height())).copy()
+        top = int(top)
+        y0 = max(0, -top)                                               # only the rows that are in view
+        y1 = min(self.strip.get_height(), H - top)
+        if y1 <= y0:
+            return
+        view = self.strip.subsurface((int(camx), y0, W, y1 - y0)).copy()
         frame = self.caustics[(tick // 4) % len(self.caustics)]
         for tx in range(-(int(camx) % 256), W, 256):
-            for ty in range(0, view.get_height(), 128):
+            for ty in range(-(y0 % 128), view.get_height(), 128):
                 view.blit(frame, (tx, ty), special_flags=pygame.BLEND_RGB_ADD)
-        scr.blit(view, (0, top))
+        scr.blit(view, (0, top + y0))
 
     def draw_kelp(self, scr, k, camx, camy, tick):
         layer = k["layer"]
