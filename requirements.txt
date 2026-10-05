@@ -1,0 +1,11 @@
+# Python 3.10 - 3.12 (mediapipe 0.10.21 has no wheels for newer Pythons)
+pygame>=2.5
+numpy<2                       # mediapipe 0.10.21 needs numpy 1.x
+mediapipe==0.10.21            # last versions with the bundled face mesh + hands models
+opencv-contrib-python==4.11.0.86
+openai-whisper
+SpeechRecognition
+pyaudio                       # if this fails: brew install portaudio
+certifi                       # lets Python reach OpenAI over https on macOS
+piper-tts==1.8.0              # ORCA's human-sounding voice, runs on this Mac
+aiohttp>=3.9                  # phone VR mode: the https + WebSocket link to the phone

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>ROV-6 · ORCA</title>
+<style>
+  :root { --cyan: #78dcff; --ink: #e6f0f5; --dim: #8caab9; --warn: #ff7864; --ok: #00ff96; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #000; color: var(--ink); overflow: hidden;
+               font-family: ui-monospace, Menlo, Consolas, monospace; touch-action: none; user-select: none;
+               -webkit-user-select: none; }
+  [hidden] { display: none !important; }
+
+  /* ---------- before VR ---------- */
+  #setup { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           gap: 2.2vh; padding: 4vh 6vw; text-align: center; overflow: auto;
+           background: radial-gradient(ellipse at 50% 20%, #0b4a63 0%, #041a28 60%, #020c14 100%); }
+  #setup h1 { margin: 0; font-size: clamp(20px, 5vw, 34px); color: var(--cyan); letter-spacing: 0.08em; }
+  #setup p { margin: 0; color: var(--dim); font-size: clamp(12px, 2.6vw, 15px); max-width: 34em; line-height: 1.5; }
+  #start { font: inherit; font-weight: bold; font-size: clamp(18px, 5vw, 30px); letter-spacing: 0.06em; color: #02202c;
+           background: var(--cyan); border: 0; border-radius: 14px; padding: 0.9em 1.4em; margin: 1vh 0; }
+  #start:disabled { background: #2c5568; color: #7fa0b0; }
+  #checks { list-style: none; margin: 0; padding: 0; font-size: clamp(12px, 2.6vw, 15px); text-align: left; }
+  #checks li { padding: 0.2em 0; color: var(--dim); }
+  #checks li.ok { color: var(--ok); }
+  #checks li.bad { color: var(--warn); }
+  #setup a { color: var(--dim); font-size: 13px; }
+
+  /* ---------- VR ---------- */
+  #view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #hud { position: fixed; inset: 0; display: flex; pointer-events: none; }
+  /* each eye gets its own copy of the HUD, nudged towards the nose so the two fuse at arm's length */
+  .eye { position: relative; flex: 1; overflow: hidden; }
+  .eye .in { position: absolute; left: 50%; top: 50%; width: 58%; height: 62%;
+             transform: translate(calc(-50% + var(--nudge)), -50%); text-align: center; }
+  .eye.left { --nudge: 1.1vw; }
+  .eye.right { --nudge: -1.1vw; }
+  .in > div { position: absolute; left: 0; right: 0; text-shadow: 0 0 0.6vh #000, 0 0 0.3vh #000; }
+  .orca { top: 0; font-size: 3.2vh; color: var(--cyan); letter-spacing: 0.12em; }
+  .dot { display: inline-block; width: 1.9vh; height: 1.9vh; border-radius: 50%; margin-left: 0.5em;
+         vertical-align: 0.05em; background: var(--warn); }
+  .dot.LISTENING { background: #00ff78; animation: pulse 1.6s infinite; }
+  .dot.SPEAKING { background: var(--cyan); animation: pulse 0.7s infinite; }
+  .dot.THINKING { background: #ffdc78; }
+  @keyframes pulse { 50% { transform: scale(1.35); } }
+  .flash { top: 15%; font-size: 4.4vh; font-weight: bold; }
+  .warn { top: 30%; color: var(--warn); font-size: 4.2vh; font-weight: bold; }
+  .warn small { display: block; font-size: 2.9vh; font-weight: normal; color: var(--ink); margin-top: 0.6vh; }
+  .card { top: 18%; background: rgba(0, 20, 30, 0.82); border: 0.3vh solid rgba(120, 220, 255, 0.5);
+          border-radius: 2vh; padding: 3vh 1.5vw; }
+  .card .steps { font-size: 2.6vh; color: var(--dim); letter-spacing: 0.3em; }
+  .card .title { font-size: 4.2vh; font-weight: bold; color: var(--cyan); margin: 1.2vh 0; line-height: 1.25; }
+  .card .sub { font-size: 3.4vh; }
+  .card.ok .sub { color: var(--ok); }
+  .subtitle { bottom: 6%; font-size: 3vh; line-height: 1.3; color: var(--cyan); }
+  .subtitle span { background: rgba(0, 20, 30, 0.72); border-radius: 1vh; padding: 0.3vh 0.8vw;
+                   -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .chips { bottom: -1%; font-size: 2.8vh; letter-spacing: 0.08em; }
+  .chips .chip { color: #ffdc78; }
+  .chips .hold { color: var(--ok); }
+  #rotate { position: fixed; inset: 0; background: #020c14; display: flex; align-items: center; justify-content: center;
+            font-size: 5vw; color: var(--cyan); text-align: center; padding: 8vw; }
+
+  /* ---------- debug view (outside the headset) ---------- */
+  body.debug #view { position: static; width: 100%; height: auto; aspect-ratio: 10 / 9; }
+  body.debug #hud { display: none; }
+  #debug { position: fixed; inset: 0; overflow: auto; background: #041a28; padding: 10px; touch-action: auto;
+           display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; align-content: start; }
+  #debug h2 { margin: 0 0 6px; font-size: 13px; color: var(--cyan); letter-spacing: 0.1em; }
+  #debug .pane { background: #062434; border-radius: 8px; padding: 8px; }
+  #cam.unseen { position: fixed; left: 0; top: 0; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+  #camwrap { position: relative; }
+  #camwrap video, #camwrap canvas { width: 100%; display: block; border-radius: 4px; }
+  #camwrap canvas { position: absolute; inset: 0; height: 100%; }
+  #readout { font-size: 12px; line-height: 1.6; white-space: pre-wrap; color: var(--ink); margin: 0; }
+  #debug button { font: inherit; font-size: 13px; color: var(--ink); background: #0b4a63; border: 0; border-radius: 6px;
+                  padding: 8px 10px; margin: 6px 6px 0 0; }
+  #viewpane { touch-action: none; }
+</style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <!-- the rear camera is a sensor, not something to look at: in VR it runs out of sight -->
+  <video id="cam" class="unseen" playsinline muted autoplay></video>
+  <div id="hud" hidden></div>
+  <div id="rotate" hidden>Turn the phone sideways,<br>then put it in the viewer</div>
+
+  <div id="debug" hidden>
+    <div class="pane"><h2>REAR CAMERA + HAND JOINTS (stays on this phone)</h2>
+      <div id="camwrap"><canvas id="marks"></canvas></div></div>
+    <div class="pane" id="viewpane"><h2>LEFT EYE (drag to look around if there is no motion sensor)</h2></div>
+    <div class="pane"><h2>READINGS</h2><pre id="readout"></pre>
+      <button data-cmd="recenter">Recentre view</button><button data-cmd="calibrate">Run calibration</button>
+      <button data-cmd="skip">Skip step</button></div>
+  </div>
+
+  <div id="setup">
+    <h1>UNDERWATER TELEPRESENCE</h1>
+    <p>ROV-6 · ORCA &nbsp;—&nbsp; turn the phone sideways, press start, allow motion, camera and microphone,
+       then put the phone in the viewer with its rear camera uncovered.</p>
+    <button id="start" disabled>CONNECTING...</button>
+    <ul id="checks"></ul>
+    <a id="debuglink" href="?debug=1">debug view: camera feed and hand joints, no headset</a>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
